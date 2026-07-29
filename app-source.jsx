@@ -238,6 +238,7 @@ export default function TrainPatrolApp() {
   const [syncConfig, setSyncConfig] = useState(null); // parsed Firebase config, or null if not set up
   const [syncConfigText, setSyncConfigText] = useState(""); // raw textarea contents in Settings
   const [syncStatus, setSyncStatus] = useState(""); // short status message shown in Settings/Setup
+  const [setupServerStatus, setSetupServerStatus] = useState(""); // what the setup screen found on the server
 
   // ---------- load persisted config + active session ----------
   useEffect(() => {
@@ -250,7 +251,8 @@ export default function TrainPatrolApp() {
         const sc = await window.storage.get("sync_config", false);
         if (sc && sc.value) {
           setSyncConfigText(sc.value);
-          try { setSyncConfig(JSON.parse(sc.value)); } catch (e) {}
+          const parsed = parseFirebaseConfigText(sc.value);
+          if (parsed) setSyncConfig(parsed);
         }
       } catch (e) {}
       try {
@@ -315,6 +317,29 @@ async function saveSyncConfig(text) {
     const data = await fbFetchRecords(parsed);
     setSyncStatus(data !== null ? "서버 연결됨" : "연결 실패 (databaseURL 등 값을 확인하세요)");
   }
+
+  function countNonEmpty(dataObj) {
+    if (!dataObj) return 0;
+    return Object.values(dataObj).filter((v) => Array.isArray(v) && v.length > 0).length;
+  }
+
+  async function checkSetupServerData() {
+    if (!syncConfig) return;
+    setSetupServerStatus("서버에서 확인하는 중...");
+    const data = await fbFetchRecords(syncConfig);
+    if (data === null) {
+      setSetupServerStatus("⚠ 서버에 연결하지 못했습니다 (설정값 또는 인터넷 연결을 확인하세요)");
+    } else {
+      const count = countNonEmpty(data);
+      setSetupServerStatus(
+        count > 0 ? `서버에 저장된 기록 ${count}건을 불러왔습니다.` : "서버에 연결됐지만 아직 저장된 기록이 없습니다."
+      );
+    }
+  }
+
+  useEffect(() => {
+    if (screen === "setup" && syncConfig) checkSetupServerData();
+  }, [screen, syncConfig]);
 
   // Live subscription: while patrolling, keep previousRecords in sync with the
   // shared server so everyone sees each other's saved records automatically.
@@ -402,12 +427,19 @@ async function saveSyncConfig(text) {
     return map;
   }
 
-  function startPatrol() {
-    if (!syncConfig) {
+  const [startingPatrol, setStartingPatrol] = useState(false);
+
+  async function startPatrol() {
+    setStartingPatrol(true);
+    if (syncConfig) {
+      const data = await fbFetchRecords(syncConfig);
+      setPreviousRecords(data || {});
+    } else {
       const parsed = pasteText.trim() ? parsePrevious(pasteText) : {};
       setPreviousRecords(parsed);
     }
     setRecords({});
+    setStartingPatrol(false);
     setScreen("main");
   }
 
@@ -676,6 +708,16 @@ async function saveSyncConfig(text) {
             <div style={{ ...S.card, marginTop: 16 }}>
               <div style={{ color: "#7fd88f", fontSize: 13, fontWeight: 700, marginBottom: 4 }}>🔗 서버 동기화 켜짐</div>
               <div style={S.hint}>이전 기록을 붙여넣지 않아도 자동으로 불러옵니다. 다른 사람이 저장한 기록도 실시간으로 같이 보여요.</div>
+              {setupServerStatus && <div style={{ ...S.hint, marginTop: 8, color: setupServerStatus.startsWith("⚠") ? "#e08a8a" : "#9a958a" }}>{setupServerStatus}</div>}
+              <button style={{ ...S.btnGhost, marginTop: 8, width: "100%", padding: "8px 0", fontSize: 12 }} onClick={checkSetupServerData}>
+                지금 다시 확인하기
+              </button>
+              <button
+                style={{ ...S.btnGhost, marginTop: 6, width: "100%", padding: "8px 0", fontSize: 12, color: "#e08a8a", borderColor: "#5c3c3c" }}
+                onClick={() => saveSyncConfig("")}
+              >
+                동기화 해제
+              </button>
             </div>
           ) : (
             <>
@@ -694,8 +736,8 @@ async function saveSyncConfig(text) {
             <Settings size={16} style={{ marginRight: 6 }} /> 구간 범위 / 유형 설정
           </button>
 
-          <button style={{ ...S.btnPrimary, marginTop: 12, width: "100%" }} onClick={startPatrol}>
-            순회 시작
+          <button style={{ ...S.btnPrimary, marginTop: 12, width: "100%" }} onClick={startPatrol} disabled={startingPatrol}>
+            {startingPatrol ? "불러오는 중..." : "순회 시작"}
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "train-patrol-v13";
+const CACHE_NAME = "train-patrol-v15";
 const CORE_ASSETS = [
   "./",
   "./index.html",
