@@ -271,7 +271,30 @@ export default function TrainPatrolApp() {
     } catch (e) {}
   }, []);
 
-  async function saveSyncConfig(text) {
+function parseFirebaseConfigText(rawText) {
+  let text = rawText.trim();
+  // tolerate pasting the whole "const firebaseConfig = { ... };" line
+  text = text.replace(/^\s*(const|let|var)\s+\w+\s*=\s*/, "").replace(/;\s*$/, "");
+
+  // 1) try strict JSON first
+  try {
+    return JSON.parse(text);
+  } catch (e) {}
+
+  // 2) fall back to parsing as a plain JS object literal (Firebase's console
+  // gives you unquoted keys like `apiKey: "..."`, which isn't valid JSON).
+  // This only ever runs on text the person themselves pasted into their own
+  // Settings screen, so evaluating it as JS here is safe.
+  try {
+    // eslint-disable-next-line no-new-func
+    const obj = new Function("return (" + text + ")")();
+    if (obj && typeof obj === "object") return obj;
+  } catch (e) {}
+
+  return null;
+}
+
+async function saveSyncConfig(text) {
     setSyncConfigText(text);
     try {
       await window.storage.set("sync_config", text, false);
@@ -281,16 +304,16 @@ export default function TrainPatrolApp() {
       setSyncStatus("");
       return;
     }
-    try {
-      const parsed = JSON.parse(text);
-      setSyncConfig(parsed);
-      setSyncStatus("연결 확인 중...");
-      const data = await fbFetchRecords(parsed);
-      setSyncStatus(data !== null ? "서버 연결됨" : "연결 실패 (설정값을 확인하세요)");
-    } catch (e) {
+    const parsed = parseFirebaseConfigText(text);
+    if (!parsed) {
       setSyncConfig(null);
-      setSyncStatus("설정 형식이 올바르지 않습니다 (JSON 확인)");
+      setSyncStatus("설정 형식을 읽을 수 없어요. { apiKey: ... } 부분이 통째로 들어있는지 확인해주세요.");
+      return;
     }
+    setSyncConfig(parsed);
+    setSyncStatus("연결 확인 중...");
+    const data = await fbFetchRecords(parsed);
+    setSyncStatus(data !== null ? "서버 연결됨" : "연결 실패 (databaseURL 등 값을 확인하세요)");
   }
 
   // Live subscription: while patrolling, keep previousRecords in sync with the
