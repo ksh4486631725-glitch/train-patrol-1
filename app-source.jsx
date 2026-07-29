@@ -185,12 +185,28 @@ function fbEnsure(cfg) {
   }
 }
 
+// Firebase Realtime Database keys can't contain ".", "#", "$", "[", "]" — but our
+// internal record keys use "#" as a separator (e.g. "s04#83#up"), which Firebase
+// rejects outright. Swap it for "~" (allowed) only at the Firebase boundary; the
+// rest of the app keeps using "#" internally, unaware anything changed.
+function toFbKey(key) {
+  return key.replace(/#/g, "~");
+}
+function fromFbKey(key) {
+  return key.replace(/~/g, "#");
+}
+function remapKeys(obj, mapper) {
+  const out = {};
+  for (const k of Object.keys(obj || {})) out[mapper(k)] = obj[k];
+  return out;
+}
+
 async function fbFetchRecords(cfg) {
   const db = fbEnsure(cfg);
   if (!db) return null;
   try {
     const snap = await db.ref("records").get();
-    return snap.exists() ? snap.val() : {};
+    return snap.exists() ? remapKeys(snap.val(), fromFbKey) : {};
   } catch (e) {
     return null;
   }
@@ -200,7 +216,7 @@ async function fbPushRecords(cfg, mergedRecords) {
   const db = fbEnsure(cfg);
   if (!db) return false;
   try {
-    await db.ref("records").set(mergedRecords);
+    await db.ref("records").set(remapKeys(mergedRecords, toFbKey));
     return true;
   } catch (e) {
     return false;
@@ -211,7 +227,7 @@ function fbSubscribe(cfg, onChange) {
   const db = fbEnsure(cfg);
   if (!db) return () => {};
   const ref = db.ref("records");
-  const handler = (snap) => onChange(snap.exists() ? snap.val() : {});
+  const handler = (snap) => onChange(snap.exists() ? remapKeys(snap.val(), fromFbKey) : {});
   ref.on("value", handler);
   return () => ref.off("value", handler);
 }
