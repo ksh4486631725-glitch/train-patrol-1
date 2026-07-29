@@ -1,0 +1,15 @@
+{
+  "name": "열차순회 기록",
+  "short_name": "열차순회",
+  "description": "열차순회 전주 카운터 및 이상(지장수목/조류둥지/넝쿨 등) 기록 앱",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#181b1f",
+  "theme_color": "#181b1f",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

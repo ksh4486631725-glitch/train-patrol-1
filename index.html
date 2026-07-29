@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>열차순회 기록</title>
+<meta name="theme-color" content="#181b1f" />
+<meta name="description" content="열차순회 전주 카운터 및 이상 기록 앱" />
+
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="열차순회" />
+
+<style>
+  html, body { margin: 0; padding: 0; background: #181b1f; }
+  #root { min-height: 100vh; }
+  * { -webkit-tap-highlight-color: transparent; }
+  input, textarea, select, button { font-family: inherit; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Optional: only used if the person configures server sync in Settings.
+     If this fails to load (offline, blocked, etc.) the app still works fine locally -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<!-- everything else (React + app) is pre-bundled into one plain JS file: no CDN, no in-browser compile step -->
+<script src="bundle.js"></script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
