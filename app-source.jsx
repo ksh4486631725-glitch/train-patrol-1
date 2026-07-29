@@ -59,6 +59,9 @@ const DEFAULT_SECTIONS = [
 ];
 const DEFAULT_TAGS = ["지장수목", "조류둥지", "넝쿨"];
 const LINE_LABEL = { up: "상선", down: "하선" };
+// Bump this on every new build so it's obvious on-screen whether an update
+// actually landed (helps tell "just needs a refresh" apart from "still stale").
+const APP_BUILD = "v9 · 2026-07-29";
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const recKey = (sectionId, num, line) => `${sectionId}#${num}#${line}`;
@@ -755,6 +758,8 @@ async function saveSyncConfig(text) {
           <button style={{ ...S.btnPrimary, marginTop: 12, width: "100%" }} onClick={startPatrol} disabled={startingPatrol}>
             {startingPatrol ? "불러오는 중..." : "순회 시작"}
           </button>
+
+          <div style={S.buildTag}>{APP_BUILD}</div>
         </div>
       </div>
     );
@@ -896,6 +901,7 @@ async function saveSyncConfig(text) {
           <span style={S.legendItem}><span style={{ ...S.legendDot, border: "1.5px solid #4a90a4", background: "transparent" }} /> 이전 기록</span>
           {syncConfig && <span style={{ ...S.legendItem, color: "#7fd88f", marginLeft: "auto" }}>🔗 실시간 동기화 중</span>}
         </div>
+        <div style={{ ...S.buildTag, textAlign: "right", marginTop: -8, marginBottom: 8 }}>{APP_BUILD}</div>
 
         {gridSegments.map((seg, segIdx) => {
           if (seg.kind === "landmark") {
@@ -999,6 +1005,7 @@ const styles = {
   subtle: { fontSize: 13, color: "#9a958a" },
   label: { display: "block", fontSize: 12, color: "#9a958a", marginTop: 16, marginBottom: 6, letterSpacing: 0.5 },
   hint: { fontSize: 12, color: "#6f7680", marginTop: 6, lineHeight: 1.5 },
+  buildTag: { fontSize: 10, color: "#4a4f56", marginTop: 16, textAlign: "center", letterSpacing: 0.3 },
   input: { width: "100%", boxSizing: "border-box", background: "#22262b", border: "1px solid #33383e", borderRadius: 8, padding: "10px 12px", color: "#e7e2d8", fontSize: 15, outline: "none" },
   smallInput: { width: 64, boxSizing: "border-box", background: "#22262b", border: "1px solid #33383e", borderRadius: 6, padding: "6px 8px", color: "#e7e2d8", fontSize: 14, outline: "none" },
   sectionLabel: { fontSize: 13, fontWeight: 700, color: "#ffb020", marginBottom: 8, letterSpacing: 0.5 },
